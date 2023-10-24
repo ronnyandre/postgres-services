@@ -1,6 +1,6 @@
 # PostgreSQL services
 
-How to use PostgreSQL as cache and message queue services.
+Some PostgreSQL tricks that can be nifty.
 
 ## Least Recently Used Cache
 
@@ -80,4 +80,55 @@ WHERE qt.id =
      FOR UPDATE SKIP LOCKED
    LIMIT 1)
 RETURNING qt.id, qt.inserted_at, qt.payload;
+```
+
+## Stop Plus Addressing For Signups
+
+So, you want to avoid people misuse your free tier service by registering `email@email.com`, `email+1@email.com`, `email+2@email.com` and so on? You can do that by adding a generated column that removes the plus and whatever's after that sign in the email address and making that generated column unique.
+
+The table would look like this:
+
+```sql
+CREATE TABLE user_table (
+	email VARCHAR(255),
+	email_normal VARCHAR(255) GENERATED ALWAYS AS (
+		SPLIT_PART(
+			SPLIT_PART(email, '@', 1),
+			'+',
+			1
+		) || '@' || SPLIT_PART(email, '@', -1)
+	) STORED UNIQUE
+);
+```
+
+Let me explain a bit. First we add the `email` column. This is the field you would normally validate against when logging in, nothing special about that.
+
+But that next generated column `email_normal` is the "normalized" version of the email. This consists of splitting the email address into two. The part before and after the `@` sign. And then for the first part (before the `@` sign), split the text again at the `+` sign and return only the first part. Then you combine whatever was before the `+` sign and after the `@` sign, having the email normalized. The icing on the cake is to add a `unique` clause on that `email_normal` generated column, rendering any duplicate of unique emails impossible.
+
+So, this would work perfectly fine:
+
+```sql
+INSERT INTO user_table (email) VALUES ('email+service@email.com`)
+```
+
+But in the database it will look like this:
+
+```sql
+SELECT * FROM user_table;
+```
+
+```
++-------------------------+-----------------+
+|  email                  | email_normal    |
++-------------------------+-----------------+
+| email+service@email.com | email@email.com |
++-------------------------+-----------------+
+```
+
+However, the following would generate an error on second insert (in either order it is inserted):
+
+```sql
+INSERT INTO user_table (email) VALUES ('email+service@email.com');
+INSERT INTO user_table (email) VALUES ('email+otherservice@email.com');
+INSERT INTO user_table (email) VALUES ('email@email.com');
 ```
