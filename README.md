@@ -119,7 +119,7 @@ SELECT * FROM user_table;
 
 ```
 +-------------------------+-----------------+
-|  email                  | email_normal    |
+| email                   | email_normal    |
 +-------------------------+-----------------+
 | email+service@email.com | email@email.com |
 +-------------------------+-----------------+
