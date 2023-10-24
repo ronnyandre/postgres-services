@@ -90,14 +90,14 @@ The table would look like this:
 
 ```sql
 CREATE TABLE user_table (
-	email VARCHAR(255),
-	email_normal VARCHAR(255) GENERATED ALWAYS AS (
-		SPLIT_PART(
-			SPLIT_PART(email, '@', 1),
-			'+',
-			1
-		) || '@' || SPLIT_PART(email, '@', -1)
-	) STORED UNIQUE
+  email VARCHAR(255),
+  email_normal VARCHAR(255) GENERATED ALWAYS AS (
+    SPLIT_PART(
+      SPLIT_PART(email, '@', 1),
+      '+',
+      1
+    ) || '@' || SPLIT_PART(email, '@', -1)
+  ) STORED UNIQUE
 );
 ```
 
